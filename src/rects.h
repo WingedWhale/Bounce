@@ -7,11 +7,12 @@ typedef enum DIGITAL_ROUND {
     DOWN
 } DIGITAL_ROUND;
 
-typedef struct {
+typedef struct ColoredRect {
     double x, y;
     int w, h;
     SDL_Color color;
     double dx, dy;
+    int dir_x, dir_y;
 } ColoredRect;
 
 SDL_Color rainbow(double percentage);

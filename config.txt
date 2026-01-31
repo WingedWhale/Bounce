@@ -1,0 +1,11 @@
+# Number of rectangles
+n_rects = 100
+
+# Color spectrum range (0.0 - 1.0)
+color_range = 0.6
+
+# dx expression - evaluated per frame
+# Available variables: i (rect index), n (total rects), t (time in seconds)
+# Available functions: sin, cos, tan, asin, acos, atan, sqrt, floor, ceil
+# Available constants: pi, e
+dx = 10 * sin((n - i) / n * 2 * pi)

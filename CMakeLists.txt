@@ -13,6 +13,8 @@ add_executable(${TARGET_NAME}
     src/main.c
     src/bounce.c
     src/rects.c
+    src/expression.c
+    src/config.c
 )
 
 target_compile_options(${TARGET_NAME} PRIVATE
