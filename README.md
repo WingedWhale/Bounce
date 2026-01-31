@@ -59,9 +59,9 @@ dx = 10 * sin((n - i) / n * 2 * pi + t)
 
 ```
 # Sine wave that animates over time
-dx = 10 * sin((n - i) / n * 2 * pi + t)
+dx = 10 * sin((n - i) / n * 2 * pi)
 
-# Rectangles accelerate outward based on index
+# Rectangles accelerate based on index
 dx = t / 50 * i
 
 # Cosine modulated by position
