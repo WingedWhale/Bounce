@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     ColoredRect rects[n_rects];
     int rect_size = SCREEN_HEIGHT / n_rects;
 
-    double color_range = 0;
+    double color_range = .6;
     // printf("Enter color range (0.0-1.0): ");
     // if (scanf("%lf", &color_range) <= 0) {
     //     printf("Input error\n");
@@ -60,13 +60,18 @@ int main(int argc, char *argv[])
     // }
 
     for (int i = 0; i < n_rects; i++) {
-        rects[i].x = 10;
+        rects[i].x = SCREEN_WIDTH / 2;
         rects[i].y = i * rect_size;
         rects[i].w = rect_size;
         rects[i].h = rect_size;
         rects[i].color = rainbow((double)i / (n_rects - 1) * 0.15 + (color_range) * 0.85);
         // rects[i].dx = (double)SCREEN_WIDTH / 100 +  5 * (double)i / n_rects;
-        rects[i].dx = 10 * sin((((double)n_rects - i) / n_rects) * M_PI);
+        rects[i].dx = 10 * sin((((double)n_rects - i) / n_rects) * 2 * M_PI);
+//         double ratio = (double)i / n_rects;
+// rects[i].dx = 15 * sin(ratio * 8 * M_PI) * exp(-ratio * 3);
+
+
+        
         rects[i].dy = 0;
     }
 
