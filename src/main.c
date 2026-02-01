@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     }
 
     Config cfg;
-    if (!load_config("../config.txt", &cfg)) {
+    if (!load_config("../config.txt", &cfg) && load_config("config.txt", &cfg)) {
         printf("No config.txt found, using default settings\n");
     }
 
