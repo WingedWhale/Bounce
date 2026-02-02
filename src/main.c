@@ -7,6 +7,8 @@
 #include "expression.h"
 #include "config.h"
 
+#define MIN(a, b) ((a) <= (b)) ? (a) : (b);
+
 #ifndef M_PI
     #define M_PI 3.1415926535897932384626
 #endif
@@ -14,11 +16,18 @@
 #define SCREEN_WIDTH 1600
 #define SCREEN_HEIGHT 1000
 
+void check_for_collision(ColoredRect *rect);
+void DrawSquare(SDL_Renderer *renderer, double x, double y, double side);
+void DrawCircle(SDL_Renderer *renderer, double x, double y, double radius);
+
 int main(int argc, char *argv[])
 {
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
     SDL_bool running = SDL_TRUE;
+
+    SDL_bool wall_collision = (argc > 1) ? strtod(argv[1], NULL) : 1;
+    SDL_bool is_square = (argc > 1) ? strcmp(argv[2], "circle") : 1;
 
     // 1. Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -41,6 +50,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    SDL_SetWindowAlwaysOnTop(window, SDL_TRUE);
+
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (renderer == NULL) {
         printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -50,31 +61,36 @@ int main(int argc, char *argv[])
     }
 
     Config cfg;
-    if (!load_config("../config.txt", &cfg) && load_config("config.txt", &cfg)) {
+    if (!load_config("../config.txt", &cfg) && !load_config("config.txt", &cfg)) {
         printf("No config.txt found, using default settings\n");
     }
 
-    int n_rects = cfg.n_rects;
-    ColoredRect *rects = malloc(n_rects * sizeof(ColoredRect));
-    if (!rects) {
+    int n_points = cfg.n_rects;
+    ColoredRect *points = malloc(n_points * sizeof(ColoredRect));
+    if (!points) {
         printf("Failed to allocate rectangles\n");
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
     }
-    int rect_size = SCREEN_HEIGHT / n_rects;
+    int smaller_dimension = MIN(SCREEN_HEIGHT, SCREEN_WIDTH);
+    double point_width = smaller_dimension / n_points;
 
-    for (int i = 0; i < n_rects; i++) {
-        rects[i].x = SCREEN_WIDTH / 2;
-        rects[i].y = i * rect_size;
-        rects[i].w = rect_size;
-        rects[i].h = rect_size;
-        rects[i].color = rainbow((double)i / (n_rects - 1) * 0.15 + (cfg.color_range) * 0.85);
-        rects[i].dx = 0;
-        rects[i].dy = 0;
-        rects[i].dir_x = 1;
-        rects[i].dir_y = 1;
+    if (point_width < 2) {
+        point_width = 2;
+    }
+
+    for (int i = 0; i < n_points; i++) {
+        points[i].x = SCREEN_WIDTH / 2;
+        points[i].y = point_width / 2 + i * point_width;
+        points[i].w = point_width;
+        points[i].h = point_width;
+        points[i].color = rainbow((double)i / (n_points - 1) * 0.15 + (cfg.color_range) * 0.85);
+        points[i].dx = 0;
+        points[i].dy = 0;
+        points[i].dir_x = 1;
+        points[i].dir_y = 1;
     }
 
     double t = 0.0;
@@ -98,11 +114,11 @@ int main(int argc, char *argv[])
         SDL_RenderClear(renderer);
 
         // Evaluate dx expression and draw rectangles
-        set_variable("n", (double)n_rects);
+        set_variable("n", (double)n_points);
         set_variable("t", t);
 
-        for (int i = 0; i < n_rects; i++) {
-            ColoredRect *cur = &rects[i];
+        for (int i = 0; i < n_points; i++) {
+            ColoredRect *cur = &points[i];
 
             // Evaluate dx from expression
             set_variable("i", (double)i);
@@ -118,26 +134,18 @@ int main(int argc, char *argv[])
             cur->x += cur->dir_x * cur->dx;
             cur->y += cur->dir_y * cur->dy;
 
-            if (cur->x < 0) {
-                cur->x = -cur->x;
-                cur->dir_x *= -1;
-            }
-            else if (cur->x + cur->w > SCREEN_WIDTH) {
-                cur->x -= 2 * ((cur->x + cur->w) - SCREEN_WIDTH);
-                cur->dir_x *= -1;
-            }
-            if (cur->y < 0) {
-                cur->y = -cur->y;
-                cur->dir_y *= -1;
-            }
-            else if (cur->y + cur->h > SCREEN_HEIGHT) {
-                cur->y -= 2 * ((cur->y + cur->h) - SCREEN_HEIGHT);
-                cur->dir_y *= -1;
+            if (wall_collision) {
+                check_for_collision(cur);
             }
 
             SDL_SetRenderDrawColor(renderer, cur->color.r, cur->color.g, cur->color.b, 255);
-            SDL_Rect rect = {(int)cur->x, (int)cur->y, cur->w, cur->h};
-            SDL_RenderFillRect(renderer, &rect);
+
+            if (is_square) {
+                DrawSquare(renderer, cur->x, cur->y, cur->w);
+            } else {
+                DrawCircle(renderer, cur->x, cur->y, cur->w / 2);
+            }
+            
         }
 
         t += 16.0 / 1000.0;
@@ -150,10 +158,50 @@ int main(int argc, char *argv[])
     }
 
     // 5. Cleanup
-    free(rects);
+    free(points);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 
     return 0;
+}
+
+void check_for_collision(ColoredRect *rect) {
+    if (rect->x < 0) {
+                rect->x = -rect->x;
+                rect->dir_x *= -1;
+            }
+            else if (rect->x + rect->w > SCREEN_WIDTH) {
+                rect->x -= 2 * ((rect->x + rect->w) - SCREEN_WIDTH);
+                rect->dir_x *= -1;
+            }
+            if (rect->y < 0) {
+                rect->y = -rect->y;
+                rect->dir_y *= -1;
+            }
+            else if (rect->y + rect->h > SCREEN_HEIGHT) {
+                rect->y -= 2 * ((rect->y + rect->h) - SCREEN_HEIGHT);
+                rect->dir_y *= -1;
+            }
+}
+
+void DrawSquare(SDL_Renderer *renderer, double x, double y, double side)
+{
+    SDL_RenderFillRect(renderer, &(SDL_Rect){x - side/2, y - side/2, side, side});
+}
+
+void DrawCircle(SDL_Renderer *renderer, double x, double y, double radius)
+{
+    for (int w = 0; w <= radius * 2; w++)
+    {
+        for (int h = 0; h <= radius * 2; h++)
+        {
+            double dx = radius - w; // horizontal offset
+            double dy = radius - h; // vertical offset
+            if ((dx*dx + dy*dy) <= (radius * radius))
+            {
+                SDL_RenderDrawPoint(renderer, x + dx, y + dy);
+            }
+        }
+    }
 }

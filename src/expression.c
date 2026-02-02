@@ -127,6 +127,8 @@ double parse_primary(char **s, CalcError *out)
 			number = M_PI;
 		} else if (strcmp(str, "e") == 0) {
 			number = M_E;
+		} else if (strcmp(str, "tau") == 0) {
+			number = M_PI * 2;
 		} else if (strcmp(str, "sin") == 0) {
 			number = sin(process_function_body(s, out));
 		} else if (strcmp(str, "cos") == 0) {
@@ -241,6 +243,7 @@ bool is_implicit_separator(char s) {
 bool is_term_separator(char s) {
 	return s == '*' 
 	    || s == '/'
+		|| s == '%'
 	    || is_implicit_separator(s);
 }
 
@@ -253,12 +256,16 @@ void handle_term_separation(char **s, CalcError *out, double *number, bool *i_ch
 	if (**s == '*') {
 		(*s)++;
 
+		skip_whitespace(s);
+
 		*i_checker = is_num(**s);
 
 		*number *= parse_power(s, out);
 	}
 	else if (**s == '/') {
 		(*s)++;
+
+		skip_whitespace(s);
 
 		*i_checker = is_num(**s);
 
@@ -274,6 +281,26 @@ void handle_term_separation(char **s, CalcError *out, double *number, bool *i_ch
 		}
 
 		*number /= rhs;
+	}
+	else if (**s == '%') {
+		(*s)++;
+
+		skip_whitespace(s);
+
+		*i_checker = is_num(**s);
+
+		double rhs = parse_power(s, out);
+
+		if (*out != SUCCESS) {
+			return;
+		}
+
+		if (rhs == 0) {
+			*out = ERR_DIV_ZERO; // ERROR: Modulus by zero
+			return;
+		}
+
+		*number = fmod(*number, rhs);
 	}
 	else if (is_implicit_separator(**s)) {
 		// If current and previous are both numbers, Ex: "5 73"

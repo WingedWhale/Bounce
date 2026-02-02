@@ -25,5 +25,4 @@ target_compile_options(${TARGET_NAME} PRIVATE
 
 target_include_directories(${TARGET_NAME} PRIVATE src)
 
-target_link_libraries(${TARGET_NAME} PRIVATE SDL2::SDL2)
-target_link_libraries(${TARGET_NAME} PRIVATE m)
+target_link_libraries(${TARGET_NAME} PRIVATE m SDL2::SDL2main SDL2::SDL2)
