@@ -11,7 +11,6 @@ find_package(SDL2 REQUIRED)
 
 add_executable(${TARGET_NAME}
     src/main.c
-    src/bounce.c
     src/rects.c
     src/expression.c
     src/config.c

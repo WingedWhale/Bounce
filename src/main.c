@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include "bounce.h"
 #include "rects.h"
 #include "expression.h"
 #include "config.h"
@@ -16,7 +15,8 @@
 #define SCREEN_WIDTH 1600
 #define SCREEN_HEIGHT 1000
 
-void check_for_collision(ColoredRect *rect);
+SDL_bool in_bounds(ColoredRect *rect, double point_width);
+void check_for_collision(ColoredRect *rect, double point_size);
 void DrawSquare(SDL_Renderer *renderer, double x, double y, double side);
 void DrawCircle(SDL_Renderer *renderer, double x, double y, double radius);
 
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     SDL_bool running = SDL_TRUE;
 
     SDL_bool wall_collision = (argc > 1) ? strtod(argv[1], NULL) : 1;
-    SDL_bool is_square = (argc > 1) ? strcmp(argv[2], "circle") : 1;
+    SDL_bool is_square = (argc > 2) ? strcmp(argv[2], "circle") : 1;
 
     // 1. Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -83,7 +83,12 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < n_points; i++) {
         points[i].x = SCREEN_WIDTH / 2;
-        points[i].y = point_width / 2 + i * point_width;
+        if (i < n_points - 1) {
+            points[i].y = point_width / 2 + i * point_width;
+        }
+        else {
+            points[i].y = SCREEN_HEIGHT - point_width / 2 - 1;
+        }
         points[i].w = point_width;
         points[i].h = point_width;
         points[i].color = rainbow((double)i / (n_points - 1) * 0.15 + (cfg.color_range) * 0.85);
@@ -134,8 +139,12 @@ int main(int argc, char *argv[])
             cur->x += cur->dir_x * cur->dx;
             cur->y += cur->dir_y * cur->dy;
 
+            // cur->color = rainbow( (double)abs((double)cur->x - SCREEN_WIDTH/2) / (double)(SCREEN_WIDTH/2) );
+
             if (wall_collision) {
-                check_for_collision(cur);
+                while (!in_bounds(cur, point_width)) {
+                    check_for_collision(cur, point_width);
+                }
             }
 
             SDL_SetRenderDrawColor(renderer, cur->color.r, cur->color.g, cur->color.b, 255);
@@ -143,7 +152,7 @@ int main(int argc, char *argv[])
             if (is_square) {
                 DrawSquare(renderer, cur->x, cur->y, cur->w);
             } else {
-                DrawCircle(renderer, cur->x, cur->y, cur->w / 2);
+                DrawCircle(renderer, cur->x, cur->y, cur->w);
             }
             
         }
@@ -166,23 +175,35 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void check_for_collision(ColoredRect *rect) {
-    if (rect->x < 0) {
-                rect->x = -rect->x;
-                rect->dir_x *= -1;
-            }
-            else if (rect->x + rect->w > SCREEN_WIDTH) {
-                rect->x -= 2 * ((rect->x + rect->w) - SCREEN_WIDTH);
-                rect->dir_x *= -1;
-            }
-            if (rect->y < 0) {
-                rect->y = -rect->y;
-                rect->dir_y *= -1;
-            }
-            else if (rect->y + rect->h > SCREEN_HEIGHT) {
-                rect->y -= 2 * ((rect->y + rect->h) - SCREEN_HEIGHT);
-                rect->dir_y *= -1;
-            }
+SDL_bool in_bounds(ColoredRect *rect, double point_width) {
+    double x = rect->x;
+    double y = rect->y;
+
+    if (x < point_width/2 || x > SCREEN_WIDTH - point_width/2
+     || y < point_width/2 || y > SCREEN_HEIGHT - point_width/2) {
+        return SDL_FALSE;
+     }
+
+     return SDL_TRUE;
+}
+
+void check_for_collision(ColoredRect *rect, double point_width) {
+    if (rect->x <= point_width / 2) {
+        rect->x = 2 * point_width/2 - rect->x;
+        rect->dir_x *= -1;
+    }
+    else if (rect->x >= SCREEN_WIDTH - point_width/2) {
+        rect->x -= 2 * (rect->x - (SCREEN_WIDTH - point_width/2));
+        rect->dir_x *= -1;
+    }
+    if (rect->y < point_width/2) {
+        rect->y = -rect->y;
+        rect->dir_y *= -1;
+    }
+    else if (rect->y >= SCREEN_HEIGHT - point_width/2) {
+        rect->y -= 2 * ((rect->y + rect->h) - SCREEN_HEIGHT);
+        rect->dir_y *= -1;
+    }
 }
 
 void DrawSquare(SDL_Renderer *renderer, double x, double y, double side)
