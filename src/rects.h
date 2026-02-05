@@ -9,7 +9,7 @@ typedef enum DIGITAL_ROUND {
 
 typedef struct ColoredRect {
     double x, y;
-    int w, h;
+    int w;
     SDL_Color color;
     double dx, dy;
     int dir_x, dir_y;

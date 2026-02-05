@@ -22,10 +22,10 @@ Press `ESC` or close the window to quit.
 Edit `config.txt` in the project root to control the simulation.
 
 ```
-# Number of rectangles
+# Number of rectangles (MAX 500)
 n_rects = 100
 
-# Color spectrum range (0.0 - 1.0)
+# Color spectrum range (0.0 - 1.0 or rainbow)
 color_range = 0.6
 
 # dx expression - evaluated per frame

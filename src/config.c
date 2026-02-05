@@ -20,7 +20,7 @@ bool load_config(const char *path, Config *cfg)
 {
 	cfg->n_rects = 100;
 	cfg->color_range = 0.6;
-	strncpy(cfg->dx_expr, "10 * sin((n - i) / n * 2 * pi)", MAX_EXPR_LEN - 1);
+	strncpy(cfg->dx_expr, "10 * sin((n - i) / n * pi)", MAX_EXPR_LEN - 1);
 
 	FILE *file = fopen(path, "r");
 	if (!file) {
@@ -48,9 +48,20 @@ bool load_config(const char *path, Config *cfg)
 		trim(value);
 
 		if (strcmp(key, "n_rects") == 0) {
-			cfg->n_rects = atoi(value);
+			int i_value = atoi(value);
+			if (i_value > 0 && i_value <= 500) {
+				cfg->n_rects = i_value;
+			}
 		} else if (strcmp(key, "color_range") == 0) {
-			cfg->color_range = atof(value);
+			if (strcmp(value, "rainbow") == 0) {
+				cfg->color_range = -1.0F;
+			}
+			else {
+				double d_value = atof(value);
+				if (d_value >= 0.0F && d_value <= 1.0F) {
+					cfg->color_range = d_value;
+				}
+			}
 		} else if (strcmp(key, "dx") == 0) {
 			strncpy(cfg->dx_expr, value, MAX_EXPR_LEN - 1);
 			cfg->dx_expr[MAX_EXPR_LEN - 1] = '\0';

@@ -65,6 +65,8 @@ int main(int argc, char *argv[])
         printf("No config.txt found, using default settings\n");
     }
 
+    SDL_bool rainbow_color = cfg.color_range == -1.0F;
+
     int n_points = cfg.n_rects;
     ColoredRect *points = malloc(n_points * sizeof(ColoredRect));
     if (!points) {
@@ -77,10 +79,6 @@ int main(int argc, char *argv[])
     int smaller_dimension = MIN(SCREEN_HEIGHT, SCREEN_WIDTH);
     double point_width = smaller_dimension / n_points;
 
-    if (point_width < 2) {
-        point_width = 2;
-    }
-
     for (int i = 0; i < n_points; i++) {
         points[i].x = SCREEN_WIDTH / 2;
         if (i < n_points - 1) {
@@ -89,8 +87,12 @@ int main(int argc, char *argv[])
         else {
             points[i].y = SCREEN_HEIGHT - point_width / 2 - 1;
         }
-        points[i].w = point_width;
-        points[i].h = point_width;
+        if (point_width >= 2.0F) {
+            points[i].w = point_width;
+        }
+        else {
+            points[i].w = 2.0F;
+        }
         points[i].color = rainbow((double)i / (n_points - 1) * 0.15 + (cfg.color_range) * 0.85);
         points[i].dx = 0;
         points[i].dy = 0;
@@ -139,11 +141,18 @@ int main(int argc, char *argv[])
             cur->x += cur->dir_x * cur->dx;
             cur->y += cur->dir_y * cur->dy;
 
-            // cur->color = rainbow( (double)abs((double)cur->x - SCREEN_WIDTH/2) / (double)(SCREEN_WIDTH/2) );
+            if (rainbow_color) {
+                cur->color = rainbow( (double)abs((double)cur->x - SCREEN_WIDTH/2) / (double)(SCREEN_WIDTH/2) );
+            }
 
             if (wall_collision) {
+                int i = 5;
                 while (!in_bounds(cur, point_width)) {
                     check_for_collision(cur, point_width);
+                    if (i == 0) {
+                        break;
+                    }
+                    i--;
                 }
             }
 
@@ -201,7 +210,7 @@ void check_for_collision(ColoredRect *rect, double point_width) {
         rect->dir_y *= -1;
     }
     else if (rect->y >= SCREEN_HEIGHT - point_width/2) {
-        rect->y -= 2 * ((rect->y + rect->h) - SCREEN_HEIGHT);
+        rect->y -= 2 * ((rect->y + rect->w) - SCREEN_HEIGHT);
         rect->dir_y *= -1;
     }
 }
