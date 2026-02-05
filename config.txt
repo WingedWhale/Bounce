@@ -1,4 +1,4 @@
-# Number of rectangles
+# Number of rectangles (MAX 500)
 n_rects = 100
 
 # Color spectrum range (0.0 - 1.0)
